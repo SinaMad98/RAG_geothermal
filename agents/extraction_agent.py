@@ -77,30 +77,41 @@ class ParameterExtractionAgent:
         
         # Pattern for trajectory table rows
         # Example: "1000.0    995.2    2.5    180.0"
-        # or: "MD: 1000.0 m, TVD: 995.2 m, Inc: 2.5°"
+        # More restrictive: requires significant whitespace between numbers
         
-        # Try table format first
-        table_pattern = r'(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\s*(?:(\d+\.?\d*))?'
-        matches = re.findall(table_pattern, text)
+        # Check if text contains trajectory table indicators
+        has_trajectory_table = any(
+            keyword in text.upper() 
+            for keyword in ['TRAJECTORY', 'MD', 'TVD', 'INC', 'MEASURED DEPTH', 'TRUE VERTICAL']
+        )
         
-        for match in matches:
-            try:
-                md = float(match[0])
-                tvd = float(match[1])
-                inc = float(match[2]) if match[2] else None
-                azimuth = float(match[3]) if match[3] else None
-                
-                # Validate that this looks like trajectory data
-                if md >= tvd and 0 <= md <= 10000:
-                    trajectory_points.append(TrajectoryPoint(
-                        md=md,
-                        tvd=tvd,
-                        inclination=inc,
-                        azimuth=azimuth,
-                        confidence=0.8
-                    ))
-            except (ValueError, IndexError):
-                continue
+        if has_trajectory_table:
+            # Find all sequences of 3-4 numbers that could be trajectory data
+            # Pattern: look for sets of 3-4 decimal numbers
+            # Use word boundaries to avoid matching parts of larger numbers
+            pattern = r'\b(\d+\.?\d*)\s+(\d+\.?\d*)\s+(\d+\.?\d*)\b'
+            matches = re.findall(pattern, text)
+            
+            for match in matches:
+                try:
+                    md = float(match[0])
+                    tvd = float(match[1])
+                    inc = float(match[2])
+                    
+                    # Validate that this looks like trajectory data
+                    # MD >= TVD, reasonable inclination
+                    if md >= tvd and 0 <= md <= 10000 and 0 <= inc <= 90:
+                        # Additional check: avoid extracting from header
+                        # Header typically has 'm' or '°' near the numbers
+                        # Data lines won't have these immediately before/after
+                        trajectory_points.append(TrajectoryPoint(
+                            md=md,
+                            tvd=tvd,
+                            inclination=inc,
+                            confidence=0.8
+                        ))
+                except (ValueError, IndexError):
+                    continue
         
         # If no points found, try named format
         if not trajectory_points:
@@ -142,10 +153,10 @@ class ParameterExtractionAgent:
         
         # Pattern for casing descriptions
         # Example: "13 3/8\" casing to 1000m"
-        # or: "9.625 inch @ 1500-2500m"
+        # or: "9 5/8\" production casing to 2000m"
         
-        # Fractional inch format
-        pattern1 = r'(\d+)\s+(\d+)/(\d+)\s*(?:"|inch|in)?\s*(?:casing|pipe)?\s*(?:to|@|at)\s*(\d+\.?\d*)\s*(?:-\s*(\d+\.?\d*))?\s*m'
+        # Fractional inch format with escaped quotes
+        pattern1 = r'(\d+)\s+(\d+)/(\d+)\s*(?:\\"|"|\'\')?\s*(?:casing|pipe|conductor|production)?\s*(?:casing)?\s*(?:to|@|at)\s*(\d+\.?\d*)\s*(?:-\s*(\d+\.?\d*))?\s*m'
         matches1 = re.findall(pattern1, text, re.IGNORECASE)
         
         for match in matches1:
