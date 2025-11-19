@@ -1,0 +1,70 @@
+# RAG Geothermal Wells Configuration
+
+# Chunking strategies
+chunking:
+  factual_qa:
+    chunk_size: 800      # Words - for precise Q&A
+    chunk_overlap: 200   # 25% overlap prevents boundary issues
+    
+  technical_extraction:
+    chunk_size: 2500     # Words - must capture full trajectory tables (20-50 rows)
+    chunk_overlap: 400   # Larger overlap to avoid cutting tables
+    
+  summary:
+    chunk_size: 1500     # Words - context for summaries
+    chunk_overlap: 300   # 20% overlap
+
+# RAG retrieval settings
+retrieval:
+  hybrid_alpha: 0.7      # 0.7 × dense (vector) + 0.3 × sparse (BM25)
+  top_k_factual: 10      # Top results for factual queries
+  top_k_extraction: 15   # More results for extraction (trajectory)
+  top_k_casing: 10       # Results for casing design
+  enable_reranking: true
+
+# Parameter extraction settings
+extraction:
+  confidence_threshold: 0.7   # Require 70% confidence to proceed
+  enable_llm_fallback: true   # Use LLM if regex fails
+  timeout: 30                 # Seconds - prevent infinite loops
+  max_retries: 3              # Retry failed extractions
+  
+  # Regex patterns priority
+  use_regex_first: true       # Try regex before LLM (faster, more reliable)
+
+# Validation rules
+validation:
+  # Physics-based constraints
+  md_tvd_tolerance: 1.0       # Allow 1m rounding error in MD vs TVD
+  pipe_id_min_mm: 50          # Minimum realistic pipe internal diameter
+  pipe_id_max_mm: 1000        # Maximum realistic pipe internal diameter
+  inclination_max_deg: 90     # Maximum inclination (horizontal)
+  inclination_warning_deg: 80 # Warn if inclination exceeds this
+  
+  # Fluid properties defaults
+  default_fluid_density: 1000  # kg/m³ (water)
+  fluid_density_min: 800       # kg/m³
+  fluid_density_max: 1200      # kg/m³
+  
+  # Well name patterns
+  well_name_patterns:
+    - '[A-Z]{2,10}-GT-\d{2}(?:-S\d+)?'  # Dutch format: ADK-GT-01, ADK-GT-01-S1
+    - '[A-Z]{3,}-\d{2,}'                # Generic: ABC-01, WXYZ-123
+
+# Nodal analysis settings
+nodal_analysis:
+  pressure_steps: 50          # Number of points in IPR/TPR curves
+  max_iterations: 100         # Maximum iterations for convergence
+  convergence_tolerance: 0.01 # Pressure convergence (bar)
+
+# LLM settings (for fallback)
+llm:
+  model: "gpt-3.5-turbo"
+  temperature: 0.1            # Low temperature for deterministic extraction
+  max_tokens: 2000
+  
+# Logging
+logging:
+  level: "INFO"               # DEBUG, INFO, WARNING, ERROR
+  log_extractions: true       # Log all extraction attempts
+  log_validations: true       # Log validation results
