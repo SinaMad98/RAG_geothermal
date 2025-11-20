@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "filename": "test_well.pdf",
+    "num_pages": 1,
+    "well_name": "TEST-GT-01"
+  },
+  "parameters": {
+    "trajectory": [
+      {
+        "md": 0.0,
+        "tvd": 0.0,
+        "inclination": 0.0
+      },
+      {
+        "md": 500.0,
+        "tvd": 499.5,
+        "inclination": 1.5
+      },
+      {
+        "md": 1000.0,
+        "tvd": 995.0,
+        "inclination": 3.0
+      },
+      {
+        "md": 1500.0,
+        "tvd": 1485.0,
+        "inclination": 5.0
+      },
+      {
+        "md": 2000.0,
+        "tvd": 1960.0,
+        "inclination": 7.5
+      }
+    ],
+    "casing": [
+      {
+        "top_depth": 0.0,
+        "bottom_depth": 500.0,
+        "diameter": 0.339725
+      },
+      {
+        "top_depth": 0.0,
+        "bottom_depth": 2000.0,
+        "diameter": 0.244475
+      }
+    ],
+    "reservoir_pressure": 245.0,
+    "reservoir_temperature": 155.0
+  }
+}
